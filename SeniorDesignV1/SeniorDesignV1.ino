@@ -4,6 +4,7 @@
  * Description:
  * Read data from 10k NTC thermistor
  * Its resistance decrements as temperature increases.
+ * Contact info: elena@elenachong.com
  */
 
 //////////////// static variables /////////////////
@@ -13,6 +14,8 @@ const unsigned long baudrate = 9600;
 #define THERMISTORNOMINAL 10000 // thermistor resistance at 25 degrees C
 #define TEMPERATURENOMINAL 25 // temp. for nominal resistance (almost always room temperature 25 C)
 #define BCOEFFICIENT 3950 // Beta Coefficient from thermistor datasheet
+#define FANSPIN 9
+#define FANSPOWER 100 // 0 TO 255, but keep it midway. No need to run above 150. If do, the power fluctuate!
 const int N = 5; // number of samples for averaging
 //////////////// define variables /////////////////
 
@@ -26,12 +29,14 @@ float buffer = 0;
 float T;
 
 void setup() {
+  // This happens just once during the entire program
   Serial.begin(baudrate);
-
+  pinMode(FANSPIN, OUTPUT);  // Set output pin for sending signal to the TIP31
+  analogWrite(FANSPIN, 150); // pwn for controlling the speed of fans. Do no exceed 150.
 }
 
 void loop() {
-
+  // This happens continuously during the entire program
   float temp = getTemperature();
 
   if (temp == -1) {
@@ -44,6 +49,10 @@ void loop() {
   delay(1000);
 }
 
+
+/**
+ * Reading analog temperature from thermistor
+ */
 float getTemperature() {
   // Average the samples
   float average;

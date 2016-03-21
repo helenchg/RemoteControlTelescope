@@ -1,0 +1,50 @@
+(ExpressProject "CircuitDesign"
+  (ProjectVersion "19981106")
+  (ProjectType "Analog or A/D Mixed Mode")
+  (Folder "Design Resources"
+    (Folder "Library")
+    (NoModify)
+    (File ".\circuitdesign.dsn"
+      (Type "Schematic Design"))
+    (BuildFileAddedOrDeleted "x")
+    (CompileFileAddedOrDeleted "x"))
+  (Folder "Outputs")
+  (Folder "PSpice Resources"
+    (Folder "Simulation Profiles")
+    (Folder "Model Libraries"
+      (Sort User))
+    (Folder "Stimulus Files"
+      (Sort User))
+    (Folder "Include Files"
+      (Sort User)))
+  (DefaultLibraryBrowseDirectory "library\PSpice")
+  (PartMRUSelector
+    ("MOTOR AC"
+      (FullPartName "MOTOR AC.Normal")
+      (LibraryName
+         "C:\CADENCE\SPB_16.5\TOOLS\CAPTURE\LIBRARY\ELECTROMECHANICAL.OLB")
+      (DeviceIndex "0"))
+    (TIP31
+      (FullPartName "TIP31.Normal")
+      (LibraryName "C:\CADENCE\SPB_15.2\TOOLS\CAPTURE\LIBRARY\PSPICE\CLASS.OLB")
+      (DeviceIndex "0")))
+  (GlobalState
+    (FileView
+      (Path "Design Resources"))
+    (HierarchyView)
+    (Doc
+      (Type "COrCapturePMDoc")
+      (Frame
+        (Placement "44 0 1 -1 -1 -9 -36 0 200 0 405"))
+      (Tab 0))
+    (Doc
+      (Type "COrSchematicDoc")
+      (Frame
+        (Placement "44 2 3 -1 -1 -9 -36 60 1635 60 510")
+        (Scroll "-203 39")
+        (Zoom "100")
+        (Occurrence "/"))
+      (Path
+         "C:\USERS\CHONGE\DOCUMENTS\GITHUB\REMOTECONTROLTELESCOPE\CIRCUITDESIGN.DSN")
+      (Schematic "SCHEMATIC1")
+      (Page "PAGE1"))))
