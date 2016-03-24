@@ -27,26 +27,40 @@ float vout = 0;
 float R2 = 0;
 float buffer = 0;
 float T;
+String message;
 
 void setup() {
   // This happens just once during the entire program
   Serial.begin(baudrate);
   pinMode(FANSPIN, OUTPUT);  // Set output pin for sending signal to the TIP31
-  analogWrite(FANSPIN, 150); // pwn for controlling the speed of fans. Do no exceed 150.
 }
 
 void loop() {
   // This happens continuously during the entire program
   float temp = getTemperature();
-
+  float temp1 = getTemperatureNom();
   if (temp == -1) {
     Serial.println("Error reading temperature!");
     return;
   }
-  Serial.print("Ambient Temperature: ");
+  Serial.print("Temp: ");
   Serial.print("\t");
   Serial.println(temp);
+//    Serial.print("Temp1: ");
+//  Serial.print("\t");
+//  Serial.println(temp1);
   delay(1000);
+
+  while (Serial.available() > 0)
+  {
+    message = Serial.readString();
+  }
+  if (message.equals("ON")) {
+  analogWrite(FANSPIN, 125); // pwn for controlling the speed of fans. Do no exceed 150.
+  }
+  if (message.equals("OFF")) {
+  analogWrite(FANSPIN, 0); // pwn for controlling the speed of fans. Do no exceed 150.
+  }
 }
 
 
@@ -86,3 +100,44 @@ float getTemperature() {
   }
   return -1;
 }
+
+
+
+/**
+ * Reading analog temperature from thermistor
+ */
+float getTemperatureNom() {
+  // Average the samples
+  float averageNom;
+  int i;
+  // Take N samples and store in array
+  for (i = 0; i < N; i++) {
+    samples[i] = analogRead(A1);
+    delay(10);
+  }
+  // Average all the samples
+  averageNom = 0;
+  for (i = 0; i < N; i++) {
+    averageNom = averageNom + samples[i];
+  }
+  averageNom = averageNom / N;
+
+  if (averageNom) {
+    // convert the value to resistance
+    averageNom = (1023 / averageNom)  - 1;
+    averageNom = SERIESRESISTOR / averageNom;
+
+    // Calculate Temperature
+    float steinhart;
+    steinhart = averageNom / SERIESRESISTOR;     // (R/Ro)
+    steinhart = log(steinhart);                  // ln(R/Ro)
+    steinhart /= BCOEFFICIENT;                   // 1/B * ln(R/Ro)
+    steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
+    steinhart = 1.0 / steinhart;                 // Invert
+    steinhart -= 273.15;                         // convert to C
+    return steinhart;
+  }
+  return -1;
+}
+
+

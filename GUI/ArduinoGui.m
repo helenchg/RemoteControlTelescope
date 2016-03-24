@@ -22,7 +22,7 @@ function varargout = ArduinoGui(varargin)
 
 % Edit the above text to modify the response to help ArduinoGui
 
-% Last Modified by GUIDE v2.5 20-Mar-2016 01:28:43
+% Last Modified by GUIDE v2.5 22-Mar-2016 21:28:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,15 +54,17 @@ function ArduinoGui_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for ArduinoGui
 handles.output = hObject;
-clear a;
-global a;
-handles.user.stop = 0;
-handles.user.a = 0;
+clc;
+
 
 % Update handles structure
 guidata(hObject, handles);
 
-
+global a;
+clear a;
+global fanPin;
+fanPin = 9;
+handles.user.stop = 0;
 
 
 % UIWAIT makes ArduinoGui wait for user response (see UIRESUME)
@@ -108,16 +110,18 @@ function pushbutton_connect_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_connect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-% value = str2double(get(handles.comPort, 'String'));
+global a;
+open_ports = instrfind('Type', 'serial', 'Status', 'open');
+if ~isempty(open_ports)
+    fclose(open_ports);
+end
 com = sprintf('COM%s', handles.comPort.String);
 delete(instrfind({'Port'},{com}));
-handles.user.a = arduino(com, 'Mega2560');
+a = arduino(com, 'Mega2560');
+% a.pinMode(9, 'output');
 
-% while(1)
 %     value = a.readVoltage('A0');
 %     set(handles.text_temp, 'String', value);
-% end
 guidata(hObject, handles);
 
 
@@ -126,13 +130,25 @@ function pushbutton_disconnect_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_disconnect (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% open_ports = instrfind('Type', 'serial', 'Status', 'open');
-% if ~isempty(open_ports)
-%     fclose(open_ports);
-% end
-% set(handles.user.stop, 'Value', 1)
-global a
-while true
-    set(handles.text_temp, 'String', get(a.readVoltage('A0')));
+open_ports = instrfind('Type', 'serial', 'Status', 'open');
+if ~isempty(open_ports)
+    fclose(open_ports);
 end
 guidata(hObject, handles);
+
+
+% --- Executes on button press in pushbutton_fansOn.
+function pushbutton_fansOn_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_fansOn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% global a;
+a.writeDigitalPin(9, 1)
+
+% --- Executes on button press in pushbutton_fansOff.
+function pushbutton_fansOff_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_fansOff (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global a;
+a.writeDigitalPin(9, 0);
