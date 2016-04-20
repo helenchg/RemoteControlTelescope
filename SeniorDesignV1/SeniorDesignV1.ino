@@ -7,6 +7,14 @@
  * Contact info: elena@elenachong.com
  */
 
+ /**
+  * Connect V+ = 5v
+  * Fan pin from transistor to PWM 9
+  * Resistor pin from thermistor to Analog 0
+  * Fan positive lead to power supply positive
+  * 
+  */
+
 //////////////// static variables /////////////////
 const unsigned long baudrate = 9600;
 #define SERIESRESISTOR 10000 // the value of the resistor used for voltage divider
@@ -56,7 +64,7 @@ void loop() {
     message = Serial.readString();
   }
   if (message.equals("ON")) {
-  analogWrite(FANSPIN, 125); // pwn for controlling the speed of fans. Do no exceed 150.
+  analogWrite(FANSPIN, 100); // pwn for controlling the speed of fans. Do no exceed 150.
   }
   if (message.equals("OFF")) {
   analogWrite(FANSPIN, 0); // pwn for controlling the speed of fans. Do no exceed 150.
