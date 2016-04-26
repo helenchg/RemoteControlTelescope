@@ -44,7 +44,6 @@ public void textfield1_change1(GTextField source, GEvent event) { //_CODE_:textf
 
 public void button1_click3(GButton source, GEvent event) { //_CODE_:button1:624903:
   println("MOTOR ON");
-
   myPort.write("MN");
 } //_CODE_:button1:624903:
 
@@ -115,6 +114,9 @@ public void createGUI(){
   label4.setText("Telescope Control Panel");
   label4.setLocalColorScheme(GCScheme.GOLD_SCHEME);
   label4.setOpaque(false);
+  label5 = new GLabel(this, 395, 272, 80, 20);
+  label5.setText("My label");
+  label5.setOpaque(false);
 }
 
 // Variable declarations 
@@ -130,4 +132,5 @@ GButton button1;
 GButton button2; 
 GButton button_set; 
 GLabel label4; 
+GLabel label5; 
 

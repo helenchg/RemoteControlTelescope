@@ -27,12 +27,14 @@ const unsigned long baudrate = 115200;
 #define logicPin1 2 // for controlling motor direction with Hbridge
 #define logicPin2 3 // for controlling motor direction with Hbridge
 #define SERIESRESISTOR 10000 // the value of the resistor used for voltage divider
-#define THERMISTORPIN A0 // thermistor analog pin
+#define AMBIENTTEMP A0 // thermistor analog pin
+#define PRIMARYTEMP A1 // thermistor analog pin
+#define SECONDARYTEMP A2 // thermistor analog pin
 #define THERMISTORNOMINAL 10000 // thermistor resistance at 25 degrees C
 #define TEMPERATURENOMINAL 25 // temp. for nominal resistance (almost always room temperature 25 C)
 #define BCOEFFICIENT 3950 // Beta Coefficient from thermistor datasheet
 #define FANSPIN 9
-#define FANSPOWER 120 // 0 TO 255, but keep it midway. No need to run above 150. If do, the power fluctuate!
+#define FANSPOWER 90 // 0 TO 255, but keep it midway. No need to run above 150. If do, the power fluctuate!
 const int N = 5; // number of samples for averaging
 int motorStop = 0;
 //////////////// define variables /////////////////
@@ -103,8 +105,7 @@ void loop() {
     changeFlag = false;
   }
 
-
-    TODO: NEED TO SET PID CONTROLLER TO STOP WHEN TRAVEL STEP IS REACHED
+//    TODO: NEED TO SET PID CONTROLLER TO STOP WHEN TRAVEL STEP IS REACHED
 //  if(encoderACount0 < travelStep){
 //    setMotor(motorSpeed, CCW);
 //    myPID.Compute();
@@ -126,7 +127,7 @@ void loop() {
 //      else motorSpeed=0;
 //    }
 //  }
-  Serial.println(encoderACount0);
+//  Serial.println(encoderACount0);
 }
 
 void serialReceive() {
@@ -165,7 +166,7 @@ void serialReceive() {
 /**
  * Reading analog temperature from thermistor
  */
-float getTemperature() {
+float getTemperature(int THERMISTORPIN) {
   // Average the samples
   float average;
   int i;
