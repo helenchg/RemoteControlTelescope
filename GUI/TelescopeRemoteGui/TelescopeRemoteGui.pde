@@ -3,6 +3,8 @@ import g4p_controls.*;
 import processing.serial.*;
 import java.util.*;
 
+// WORK WITH SeniorDesignV4 and SeniorDesignV5
+
 Serial myPort; // Create object from Serial class
 String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
 Float temperature;    // Data received from the serial port

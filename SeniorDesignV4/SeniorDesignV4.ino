@@ -74,7 +74,7 @@ void setup() {
   pinMode(encoder0clk, INPUT); // get motor position from encoder
   pinMode(encoder0dir, INPUT); // get motor position from encoder
   attachInterrupt(3, encoderIntA, RISING);// encoder pin on interrupt 3 (pin 20)
-  float temp = getTemperature();
+  float temp = getTemperature(AMBIENTTEMP);
   Serial.print("T ");
   Serial.print("\t");
   Serial.println(temp);
@@ -87,7 +87,7 @@ void loop() {
 
   // This happens continuously during the entire program
 
-  float temp = getTemperature();
+  float temp = getTemperature(AMBIENTTEMP);
   if (temp == -1) {
     Serial.println("Error reading temperature!");
     return;

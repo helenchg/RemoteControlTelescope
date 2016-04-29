@@ -63,7 +63,7 @@ void setup() {
   attachInterrupt(3, encoderIntA, RISING);// encoder pin on interrupt 3 (pin 20)
   
   //Specify the links and initial tuning parameters
-  PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT);
+//  PID myPID(&Input, &Output, &Setpoint, 2, 5, 1, DIRECT);
   
 }
 

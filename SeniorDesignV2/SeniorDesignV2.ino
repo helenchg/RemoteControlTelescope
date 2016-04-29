@@ -17,7 +17,7 @@
  *
  */
 //////////////// static variables /////////////////
-const unsigned long baudrate = 9600;
+const unsigned long baudrate = 115200;
 #define encoder0PinA  21
 #define encoder0PinB  20
 #define motorPWM 10
@@ -60,7 +60,7 @@ void setup() {
 
   attachInterrupt(2, doEncoderA, FALLING);// encoder pin on interrupt 0 (pin 21)
   attachInterrupt(3, doEncoderB, FALLING);// encoder pin on interrupt 1 (pin 20)
-  Serial.begin (9600); // set Baudrate
+//  Serial.begin (9600); // set Baudrate
 }
 
 void loop() {
