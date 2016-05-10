@@ -71,8 +71,8 @@ public void button7_click1(GButton source, GEvent event) { //_CODE_:button7:6369
   String toSend;
   toSend = textfield1.getText();
   int toSendValue = Integer.parseInt(toSend);
-  if (toSendValue > 40000 ||toSendValue <0) {
-    javax.swing.JOptionPane.showMessageDialog(null, "input steps between 0 and 40000");
+  if (toSendValue > 30000 || toSendValue < -30000) {
+    javax.swing.JOptionPane.showMessageDialog(null, "input steps between -30000 and 30000");
   } else {
     myPort.write("l " + toSend);
     label_targetStep.setText(toSend);

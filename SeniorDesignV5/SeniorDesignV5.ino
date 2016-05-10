@@ -112,7 +112,7 @@ void loop() {
 //    myPID.Compute();
 //  }
   
-    setMotor(motorSpeed, CCW);
+    setMotor(motorSpeed, !CCW);
 //  if (travelStep > 0) {
 //    if(CCW == true){
 //      if(encoderACount0 >= encoderACount0 - travelStep){
@@ -128,7 +128,7 @@ void loop() {
 //      else motorSpeed=0;
 //    }
 //  }
-//  Serial.println(encoderACount0);
+  Serial.println(encoderACount);
 }
 
 /*
