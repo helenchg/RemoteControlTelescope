@@ -1,5 +1,5 @@
 #include <PID_v1.h>
-
+#include <PID_AutoTune_v0.h>
 /**
  * Author: Elena Chong
  * Date: 4/26/2016
@@ -23,8 +23,8 @@ const unsigned long baudrate = 115200;
 #define encoder0dir  21
 #define encoder0clk  20
 #define motorEnable 10
-#define logicPin1 2 // for controlling motor direction with Hbridge
-#define logicPin2 3 // for controlling motor direction with Hbridge
+#define logicPin1 2 //
+#define logicPin2 3 //
 #define hbridgeD1 4
 #define hbridgeD2 5
 #define SERIESRESISTOR 10000 // the value of the resistor used for voltage divider
@@ -115,8 +115,15 @@ void loop() { // This happens continuously during the entire program
  * Function that control the motor movement to reach target step value
  */
 void reachStepTarget() {
+  double error = abs(abs(encoderACount) - abs(travelStep));
   if (motorON) {
     if (encoderACount != travelStep) {
+      if(error > 1000){
+        myPID.SetTunings(kp+1,ki+1,kd);
+      }
+      else{
+        myPID.SetTunings(kp,ki,kd);
+      }
       if (travelStep > 0 && encoderACount < travelStep) {
         myPID.Compute(); // Set the motorSpeed to reach travelStep.
         Serial.println(motorSpeed);
