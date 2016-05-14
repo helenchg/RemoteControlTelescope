@@ -1,8 +1,8 @@
 #include <PID_v1.h>
 #include <PID_AutoTune_v0.h>
 /**
- * Author: Elena Chong
- * Date: 4/26/2016
+ * Author: Elena Chong & Toba Faseru
+ * Date: 5/14/2016
  * Description:
  * Read data from 10k NTC thermistor; Its resistance decrements as temperature increases.
  * Read encoder position for DC gearmotor with quadrature encoder chip
@@ -20,6 +20,8 @@
  */
 //////////////// static variables /////////////////
 const unsigned long baudrate = 115200;
+
+#define ledPin 13
 #define encoder0dir  21
 #define encoder0clk  20
 #define motorEnable 10
@@ -50,21 +52,35 @@ float buffer = 0;
 float T;
 String message;
 double motorSpeed = 0;
-float kp = 1.8;
-float ki = 1.95;
-float kd = 0.65;
+//float kp = 0.15;
+float kp =0.9;
+float ki =0;
+float kd =0;
+//float ki = 0.02;
+//float kd = 0;
 double travelStep = 0;
 double encoderACount0 = 0; // could have just cast volatile int to double for PID
 unsigned long timeoff = 0;
-PID myPID(&encoderACount0, &motorSpeed, &travelStep, kp, ki, kd, DIRECT);
 //PID myPID(&travelStep, &motorSpeed, &encoderACount0, kp, ki, kd, DIRECT);
 boolean rot;
 int fansPower;
 boolean motorON = false;
+//////////////// Variables for interrupt /////////////////
+unsigned volatile long viCount, viCount2; // interrupt memory variables
+unsigned long iCountH, iCountL;
+unsigned volatile long c;
+unsigned long freq;
+double freqAvg = 0;
+int fN =10;
+//////////////// PID controllers /////////////////
+double setPoint = 400; // desired frequency Hz.
+double sds = 400;
+PID myPID(&encoderACount0, &motorSpeed, &travelStep, kp, ki, kd, DIRECT);
+PID speedPID(&freqAvg, &motorSpeed, &setPoint, kp, ki, kd, DIRECT);
 
 void setup() { // This happens just once during the entire program
   Serial.begin(baudrate);
-
+  pinMode(ledPin, OUTPUT); // LED pin on arduino
   pinMode(FANSPIN, OUTPUT);  // Set output pin for sending signal to the TIP31
 
   // Check MC33887-783025 datasheet - Hbridge to drive servo motor
@@ -77,6 +93,12 @@ void setup() { // This happens just once during the entire program
   pinMode(encoder0dir, INPUT); // get motor position from encoder
   attachInterrupt(3, encoderIntA, RISING);// encoder pin on interrupt 3 (pin 20)
 
+  // initialize timer4
+  TCCR4A = 0;
+  TCCR4B = 1 << ICNC4 | 1 << ICES4 | 1 << CS42 | 0 << CS41 | 0 << CS40; // SET PRESCALER TO 256
+  TIMSK4 |= (1 << ICIE4);   // enable timer overflow interrupt PIN 49 AS INTERRUPT
+  delay(200);
+  
   // Reading all three 10k NTC thermistors
   float aTemp = getTemperature(AMBIENTTEMP);
   float pTemp = getTemperature(PRIMARYTEMP);
@@ -85,10 +107,10 @@ void setup() { // This happens just once during the entire program
   Serial.print("\t");
   Serial.println(aTemp);
   
-  //Specify the links and initial tuning parameters
-  myPID.SetMode(AUTOMATIC); // turn on PID controller for servo driving
-  myPID.SetOutputLimits(50, 155);
-  myPID.SetTunings(kp,ki,kd);
+  //Specify the output limits and initial tuning parameters
+  speedPID.SetMode(AUTOMATIC); // turn on PID controller for servo driving
+  speedPID.SetOutputLimits(50, 255);
+  speedPID.SetTunings(kp,ki,kd);
 //  motorSpeed = 0;
 }
 
@@ -96,7 +118,7 @@ void loop() { // This happens continuously during the entire program
   // two way serial communication between arduino and GUI
   serialSend();
   serialReceive();
-
+  
   // flag for encoder to check position and direction
   if (changeFlag) {
     changeFlag = false;
@@ -104,7 +126,7 @@ void loop() { // This happens continuously during the entire program
   }
 
   // Set motor to stop at target step.
-  myPID.Compute();
+  speedPID.Compute();
   reachStepTarget();
 //  Serial.print("Motor Speed:");
 //  Serial.print("\t");
@@ -115,23 +137,28 @@ void loop() { // This happens continuously during the entire program
  * Function that control the motor movement to reach target step value
  */
 void reachStepTarget() {
+  frequencyMeasurement();
   double error = abs(abs(encoderACount) - abs(travelStep));
   if (motorON) {
     if (encoderACount != travelStep) {
-      if(error > 1000){
-        myPID.SetTunings(kp+1,ki+1,kd);
-      }
-      else{
-        myPID.SetTunings(kp,ki,kd);
-      }
+//      if(error > 1000){
+//        speedPID.SetTunings(kp+1,ki+1,kd);
+//      }
+//      else{
+//        speedPID.SetTunings(kp,ki,kd);
+//      }
       if (travelStep > 0 && encoderACount < travelStep) {
-        myPID.Compute(); // Set the motorSpeed to reach travelStep.
+        speedPID.Compute(); // Set the motorSpeed to reach travelStep.
         Serial.println(motorSpeed);
+        Serial.print("Avg Freq: ");
+        Serial.println(freqAvg, DEC);
         motorReverse();
       }
       else if (travelStep < 0 && travelStep < encoderACount) {
-        myPID.Compute();
+        speedPID.Compute();
         Serial.println(motorSpeed);
+        Serial.print("Avg Freq: ");
+        Serial.println(freqAvg, DEC);
         motorForward();
       }
       else {
@@ -143,7 +170,6 @@ void reachStepTarget() {
     }
   }
 }
-
 
 /*
  * Function that does the data communication between the Arduino and the GUI
@@ -265,14 +291,13 @@ void encoderIntA() {
     encoderACount0--;
     changeFlag = true;
   }
-
 }
 
 void motorForward() {
 //  motorSpeed = 155;
   digitalWrite(motorEnable, HIGH); // Enable Pin high for the motor to work.
   analogWrite(logicPin1, motorSpeed); // PWM
-  digitalWrite(logicPin2, HIGH); // Digital
+//  digitalWrite(logicPin2, HIGH); // Digital
   digitalWrite(hbridgeD1, LOW);
   digitalWrite(hbridgeD2, HIGH);
 }
@@ -280,15 +305,54 @@ void motorForward() {
 void motorReverse() {
 //  motorSpeed = 155;
   digitalWrite(motorEnable, HIGH); // Enable Pin high for the motor to work.
-  digitalWrite(logicPin1, HIGH); // Digital
+//  digitalWrite(logicPin1, HIGH); // Digital
   analogWrite(logicPin2, motorSpeed); // PWM
   digitalWrite(hbridgeD1, LOW);
   digitalWrite(hbridgeD2, HIGH);
 }
+
 void motorStop() {
   motorON = false;
   digitalWrite(logicPin2, LOW);
   digitalWrite(logicPin1, LOW);
   digitalWrite(motorEnable, LOW); // Enable Pin high for the motor to work.
+}
+
+void frequencyMeasurement(){
+    cli();
+  iCountH = viCount;
+  iCountL = viCount2;
+  c = (iCountH << 8) | iCountL;
+  if(c == 0x0){
+    freq = 0;
+  }
+  else{
+    freq = 62500 / c;
+  }
+  for (int i = 0; i < fN; i++) {
+    freqAvg = freqAvg + freq;
+  }
+  freqAvg = freqAvg / (fN+1);
+  
+  sei();
+
+//  Serial.print("OLD: ");
+//  Serial.print(iCountH, HEX);
+//  Serial.println(iCountL, HEX );
+//  Serial.print("hex:");
+//  Serial.println(c, HEX);
+//  Serial.print("Freq:");
+//  Serial.print(freq, DEC);
+//  Serial.println("Hz");
+//  Serial.print("Avg Freq: ");
+//  Serial.println(freqAvg, DEC);
+}
+
+ISR(TIMER4_CAPT_vect) // interrupt service routine
+{
+  TCNT4 = 0;   // preload timer
+  viCount2 = ICR4L;
+  viCount = ICR4H;
+  digitalWrite(ledPin, digitalRead(ledPin) ^ 1);
 }
 
