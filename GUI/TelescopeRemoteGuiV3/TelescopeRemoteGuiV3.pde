@@ -13,7 +13,6 @@ String message;
 PFont f;
 int arCurrentStep;
 
-
 public void setup() {
 
   myPort = new Serial(this, portName, 115200);

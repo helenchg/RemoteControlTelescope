@@ -53,7 +53,7 @@ float T;
 String message;
 double motorSpeed = 0;
 //float kp = 0.15;
-float kp =0.9;
+float kp =0.15;
 float ki =0;
 float kd =0;
 //float ki = 0.02;
@@ -75,8 +75,12 @@ int fN =10;
 //////////////// PID controllers /////////////////
 double setPoint = 400; // desired frequency Hz.
 double sds = 400;
-PID myPID(&encoderACount0, &motorSpeed, &travelStep, kp, ki, kd, DIRECT);
+//PID myPID(&encoderACount0, &motorSpeed, &travelStep, kp, ki, kd, DIRECT);
 PID speedPID(&freqAvg, &motorSpeed, &setPoint, kp, ki, kd, DIRECT);
+//Define the aggressive and conservative Tuning Parameters
+double aggKp=4, aggKi=0.2, aggKd=1;
+double consKp=1, consKi=0.05, consKd=0.25;
+
 
 void setup() { // This happens just once during the entire program
   Serial.begin(baudrate);
@@ -138,15 +142,15 @@ void loop() { // This happens continuously during the entire program
  */
 void reachStepTarget() {
   frequencyMeasurement();
-  double error = abs(abs(encoderACount) - abs(travelStep));
+  double error = abs(freqAvg - setPoint);
   if (motorON) {
     if (encoderACount != travelStep) {
-//      if(error > 1000){
-//        speedPID.SetTunings(kp+1,ki+1,kd);
-//      }
-//      else{
-//        speedPID.SetTunings(kp,ki,kd);
-//      }
+      if(error < 100){
+        speedPID.SetTunings(consKp,consKi,consKd);
+      }
+      else{
+        speedPID.SetTunings(aggKp,aggKi,aggKd);
+      }
       if (travelStep > 0 && encoderACount < travelStep) {
         speedPID.Compute(); // Set the motorSpeed to reach travelStep.
         Serial.println(motorSpeed);
