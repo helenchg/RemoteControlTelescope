@@ -37,6 +37,8 @@ const unsigned long baudrate = 115200;
 #define TEMPERATURENOMINAL 25 // temp. for nominal resistance (almost always room temperature 25 C)
 #define BCOEFFICIENT 3950 // Beta Coefficient from thermistor datasheet
 #define FANSPIN 9
+#define HEATERPIN 12
+#define HEATERPOWER 255
 #define FANSPOWER 200 // 0 TO 255, but keep it midway. No need to run above 150. If do, the power fluctuate!
 const int N = 5; // number of samples for averaging
 //////////////// define variables /////////////////
@@ -53,8 +55,8 @@ float T;
 String message;
 double motorSpeed = 0;
 //float kp = 0.15;
-float kp =0.15;
-float ki =0;
+float kp =1.65;
+float ki =0.0;
 float kd =0;
 //float ki = 0.02;
 //float kd = 0;
@@ -65,6 +67,7 @@ unsigned long timeoff = 0;
 boolean rot;
 int fansPower;
 boolean motorON = false;
+boolean heaterON = false;
 //////////////// Variables for interrupt /////////////////
 unsigned volatile long viCount, viCount2; // interrupt memory variables
 unsigned long iCountH, iCountL;
@@ -86,7 +89,7 @@ void setup() { // This happens just once during the entire program
   Serial.begin(baudrate);
   pinMode(ledPin, OUTPUT); // LED pin on arduino
   pinMode(FANSPIN, OUTPUT);  // Set output pin for sending signal to the TIP31
-
+  pinMode(HEATERPIN, OUTPUT);  // Set output pin for sending signal to the TIP31
   // Check MC33887-783025 datasheet - Hbridge to drive servo motor
   pinMode(motorEnable, OUTPUT);  // Set output pin for sending signal to motor speed
   pinMode(logicPin1, OUTPUT); // set output pin for sending signal to Hbridge direction
@@ -112,10 +115,10 @@ void setup() { // This happens just once during the entire program
   Serial.println(aTemp);
   
   //Specify the output limits and initial tuning parameters
-  speedPID.SetMode(AUTOMATIC); // turn on PID controller for servo driving
-  speedPID.SetOutputLimits(50, 255);
-  speedPID.SetTunings(kp,ki,kd);
-//  motorSpeed = 0;
+//  speedPID.SetMode(AUTOMATIC); // turn on PID controller for servo driving // Comment out if want speed PID
+//  speedPID.SetOutputLimits(50, 250);  // Comment out if want speed PID
+//  speedPID.SetTunings(kp,ki,kd);      // Comment out if want speed PID
+  motorSpeed = 100;
 }
 
 void loop() { // This happens continuously during the entire program
@@ -129,6 +132,9 @@ void loop() { // This happens continuously during the entire program
     Serial.println(encoderACount);
   }
 
+  if(heaterON){
+    analogWrite(HEATERPIN, HEATERPOWER);
+  }
   // Set motor to stop at target step.
   speedPID.Compute();
   reachStepTarget();
@@ -141,29 +147,26 @@ void loop() { // This happens continuously during the entire program
  * Function that control the motor movement to reach target step value
  */
 void reachStepTarget() {
-  frequencyMeasurement();
+//  frequencyMeasurement();  // Comment out if want speed PID
   double error = abs(freqAvg - setPoint);
   if (motorON) {
     if (encoderACount != travelStep) {
-      if(error < 100){
-        speedPID.SetTunings(consKp,consKi,consKd);
-      }
-      else{
-        speedPID.SetTunings(aggKp,aggKi,aggKd);
-      }
       if (travelStep > 0 && encoderACount < travelStep) {
-        speedPID.Compute(); // Set the motorSpeed to reach travelStep.
+        motorSpeed = 100;     // Comment out if want speed PID
+//        speedPID.Compute(); // Comment out if want speed PID
         Serial.println(motorSpeed);
-        Serial.print("Avg Freq: ");
-        Serial.println(freqAvg, DEC);
-        motorReverse();
+//        Serial.print("Avg Freq: ");   // Comment out if want speed PID
+//        Serial.println(freqAvg, DEC); // Comment out if want speed PID 
+        motorForward();
+
       }
       else if (travelStep < 0 && travelStep < encoderACount) {
-        speedPID.Compute();
+        motorSpeed = 100;     // Comment out if want speed PID
+//        speedPID.Compute(); // Comment out if want speed PID
         Serial.println(motorSpeed);
-        Serial.print("Avg Freq: ");
-        Serial.println(freqAvg, DEC);
-        motorForward();
+//        Serial.print("Avg Freq: ");   // Comment out if want speed PID
+//        Serial.println(freqAvg, DEC); // Comment out if want speed PID
+        motorReverse();
       }
       else {
         motorStop();
@@ -232,6 +235,12 @@ void serialReceive() {
   if (message.equals("MN")) {
     motorON = true;
   }
+    if (message.equals("HN")) {
+    heaterON = true;
+  }
+    if (message.equals("HF")) {
+    heaterON = false;
+  }
   if (message.startsWith("l")) {
     message.replace("l ", "");
     travelStep = message.toInt();
@@ -240,7 +249,7 @@ void serialReceive() {
   if (message.startsWith("p")) {
     message.replace("p ", "");
     fansPower = message.toInt();
-    fansPower = map(fansPower, 0, 100, 40, 200);  // fans are limited to pwm 50 to 200
+    fansPower = map(fansPower, 0, 100, 50, 255);  // fans are limited to pwm 50 to 255
     Serial.println(fansPower);
   }
   Serial.flush();     // * clear any random data from the serial buffer
